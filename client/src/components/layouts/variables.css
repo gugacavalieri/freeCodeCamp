@@ -1,5 +1,6 @@
 :root {
   --theme-color: #0a0a23;
+  --yellow-gold: #ffbf00;
   --gray-00: #ffffff;
   --gray-05: #f5f6f7;
   --gray-10: #dfdfe2;
@@ -16,11 +17,15 @@
   --blue-light: #99c9ff;
   --blue-dark: #002ead;
   --green-light: #acd157;
+  --green-mid: green;
+  --purple-mid: darkviolet;
   --green-dark: #00471b;
   --red-light: #ffadad;
   --red-dark: #850000;
   --love-light: #f8577c;
   --love-dark: #f82153;
+  --editor-background-light: #fffffe;
+  --editor-background-dark: #2a2b40;
 }
 
 .dark-palette {
@@ -39,6 +44,7 @@
   --danger-color: var(--red-light);
   --danger-background: var(--red-dark);
   --love-color: var(--love-light);
+  --editor-background: var(--editor-background-dark);
 }
 
 .light-palette {
@@ -57,4 +63,5 @@
   --danger-color: var(--red-dark);
   --danger-background: var(--red-light);
   --love-color: var(--love-dark);
+  --editor-background: var(--editor-background-light);
 }

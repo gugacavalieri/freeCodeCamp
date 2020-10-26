@@ -39,6 +39,13 @@
   overflow: auto;
 }
 
+/* Without this, the above selector takes precedence and messes up the answer
+padding in night mode */
+.night .video-quiz-option > pre {
+  padding: 0;
+  margin: 0;
+}
+
 .night :not(pre) > code[class*='language-'],
 .night pre[class*='language-'] {
   background: var(--primary-background);
@@ -101,6 +108,13 @@
 .night .token.regex,
 .night .token.variable {
   color: #7ec699;
+}
+
+/* CSS code block strings have low contrast in night mode. This attempts to increase contrast above 4.5:1 */
+.night .language-css .token.string,
+.night .style .token.string {
+  color: #ec9126;
+  background: hsl(0 0% 100% / 0.12);
 }
 
 .night .token.operator,

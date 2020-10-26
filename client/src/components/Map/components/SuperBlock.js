@@ -63,6 +63,7 @@ export class SuperBlock extends Component {
     const blockDashedNames = uniq(
       blocksForSuperBlock.map(({ block }) => block)
     );
+    // render all non-empty blocks
     return (
       <ul>
         {blockDashedNames.map(blockDashedName => (

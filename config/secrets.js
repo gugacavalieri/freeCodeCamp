@@ -27,13 +27,16 @@ const {
   TWITTER_TOKEN,
   TWITTER_TOKEN_SECRET,
 
-  ROLLBAR_APP_ID,
-  ROLLBAR_CLIENT_ID,
+  SENTRY_DSN,
 
   STRIPE_PUBLIC_KEY,
   STRIPE_SECRET_KEY,
-  SERVICEBOT_ID,
-  SERVICEBOT_HMAC_SECRET_KEY
+
+  PAYPAL_CLIENT_ID,
+  PAYPAL_SECRET,
+  PAYPAL_VERIFY_WEBHOOK_URL,
+  PAYPAL_API_TOKEN_URL,
+  PAYPAL_WEBHOOK_ID
 } = process.env;
 
 module.exports = {
@@ -88,9 +91,8 @@ module.exports = {
     passReqToCallback: true
   },
 
-  rollbar: {
-    appId: ROLLBAR_APP_ID,
-    clientId: ROLLBAR_CLIENT_ID
+  sentry: {
+    dns: SENTRY_DSN
   },
 
   stripe: {
@@ -98,8 +100,11 @@ module.exports = {
     secret: STRIPE_SECRET_KEY
   },
 
-  servicebot: {
-    servicebotId: SERVICEBOT_ID,
-    hmacKey: SERVICEBOT_HMAC_SECRET_KEY
+  paypal: {
+    client: PAYPAL_CLIENT_ID,
+    secret: PAYPAL_SECRET,
+    verifyWebhookURL: PAYPAL_VERIFY_WEBHOOK_URL,
+    tokenUrl: PAYPAL_API_TOKEN_URL,
+    webhookId: PAYPAL_WEBHOOK_ID
   }
 };

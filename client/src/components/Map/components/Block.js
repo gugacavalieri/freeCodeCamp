@@ -8,7 +8,7 @@ import { Link } from 'gatsby';
 import { makeExpandedBlockSelector, toggleBlock } from '../redux';
 import { completedChallengesSelector, executeGA } from '../../../redux';
 import Caret from '../../../assets/icons/Caret';
-import { blockNameify } from '../../../../utils/blockNameify';
+import { blockNameify } from '../../../../../utils/block-nameify';
 import GreenPass from '../../../assets/icons/GreenPass';
 import GreenNotCompleted from '../../../assets/icons/GreenNotCompleted';
 import IntroInformation from '../../../assets/icons/IntroInformation';
@@ -99,11 +99,7 @@ export class Block extends Component {
       return (
         <li
           className={'map-challenge-title' + completedClass}
-          id={
-            challenge.title
-              ? dasherize(challenge.title)
-              : dasherize(challenge.frontmatter.title)
-          }
+          id={challenge.dashedName || dasherize(challenge.frontmatter.title)}
           key={'map-challenge' + challenge.fields.slug}
         >
           <span className='badge map-badge'>

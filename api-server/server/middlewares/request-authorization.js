@@ -11,23 +11,47 @@ import { jwtSecret as _jwtSecret } from '../../../config/secrets';
 
 import { wrapHandledError } from '../utils/create-handled-error';
 
-// We need to tunnel through a proxy path set up within
-// the gatsby app, at this time, that path is /internal
-const apiProxyRE = /^\/internal\/|^\/external\//;
-const newsShortLinksRE = /^\/internal\/n\/|^\/internal\/p\?/;
-const loopbackAPIPathRE = /^\/internal\/api\//;
-const showCertRe = /^\/internal\/certificate\/showCert\//;
+const authRE = /^\/auth\//;
+const confirmEmailRE = /^\/confirm-email$/;
+const newsShortLinksRE = /^\/n\/|^\/p\//;
+const publicUserRE = /^\/api\/users\/get-public-profile$/;
+const publicUsernameRE = /^\/api\/users\/exists$/;
+const resubscribeRE = /^\/resubscribe\//;
+const showCertRE = /^\/certificate\/showCert\//;
+// note: signin may not have a trailing slash
+const signinRE = /^\/signin/;
+const statusRE = /^\/status\/ping$/;
+const unsubscribedRE = /^\/unsubscribed\//;
+const unsubscribeRE = /^\/u\/|^\/unsubscribe\/|^\/ue\//;
+const updateHooksRE = /^\/hooks\/update-paypal$|^\/hooks\/update-stripe$/;
 
-const _whiteListREs = [newsShortLinksRE, loopbackAPIPathRE, showCertRe];
+// note: this would be replaced by webhooks later
+const donateRE = /^\/donate\/charge-stripe$/;
 
-export function isWhiteListedPath(path, whiteListREs = _whiteListREs) {
-  return whiteListREs.some(re => re.test(path));
+const _pathsAllowedREs = [
+  authRE,
+  confirmEmailRE,
+  newsShortLinksRE,
+  publicUserRE,
+  publicUsernameRE,
+  resubscribeRE,
+  showCertRE,
+  signinRE,
+  statusRE,
+  unsubscribedRE,
+  unsubscribeRE,
+  updateHooksRE,
+  donateRE
+];
+
+export function isAllowedPath(path, pathsAllowedREs = _pathsAllowedREs) {
+  return pathsAllowedREs.some(re => re.test(path));
 }
 
 export default ({ jwtSecret = _jwtSecret, getUserById = _getUserById } = {}) =>
   function requestAuthorisation(req, res, next) {
     const { path } = req;
-    if (apiProxyRE.test(path) && !isWhiteListedPath(path)) {
+    if (!isAllowedPath(path)) {
       const { accessToken, error, jwt } = getAccessTokenFromRequest(
         req,
         jwtSecret

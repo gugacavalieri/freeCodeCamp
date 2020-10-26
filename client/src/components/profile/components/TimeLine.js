@@ -3,10 +3,10 @@ import PropTypes from 'prop-types';
 import format from 'date-fns/format';
 import { find, reverse, sortBy } from 'lodash';
 import { Button, Modal, Table } from '@freecodecamp/react-bootstrap';
-import { Link, useStaticQuery, graphql } from 'gatsby';
+import { useStaticQuery, graphql } from 'gatsby';
 
 import TimelinePagination from './TimelinePagination';
-import { FullWidthRow } from '../../helpers';
+import { FullWidthRow, Link } from '../../helpers';
 import SolutionViewer from '../../settings/SolutionViewer';
 import {
   getCertIds,
@@ -80,7 +80,8 @@ class TimelineInner extends Component {
 
   renderCompletion(completed) {
     const { idToNameMap, username } = this.props;
-    const { id, completedDate } = completed;
+    const { id } = completed;
+    const completedDate = new Date(completed.completedDate);
     const { challengeTitle, challengePath, certPath } = idToNameMap.get(id);
     return (
       <tr className='timeline-row' key={id}>
@@ -88,6 +89,7 @@ class TimelineInner extends Component {
           {certPath ? (
             <Link
               className='timeline-cert-link'
+              external={true}
               to={`certification/${username}/${certPath}`}
             >
               {challengeTitle}
@@ -98,11 +100,10 @@ class TimelineInner extends Component {
           )}
         </td>
         <td className='text-center'>
-          <time dateTime={format(completedDate, 'YYYY-MM-DDTHH:MM:SSZ')}>
-            {format(completedDate, 'MMMM D, YYYY')}
+          <time dateTime={completedDate.toISOString()}>
+            {format(completedDate, 'MMMM d, y')}
           </time>
         </td>
-        <td />
       </tr>
     );
   }
@@ -169,7 +170,6 @@ class TimelineInner extends Component {
               <tr>
                 <th>Challenge</th>
                 <th className='text-center'>Completed</th>
-                <th />
               </tr>
             </thead>
             <tbody>

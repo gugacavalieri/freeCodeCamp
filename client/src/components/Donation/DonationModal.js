@@ -1,15 +1,16 @@
 /* eslint-disable max-len */
-import React from 'react';
+import React, { useEffect } from 'react';
 import PropTypes from 'prop-types';
 import { bindActionCreators } from 'redux';
 import { connect } from 'react-redux';
 import { createSelector } from 'reselect';
 import { Modal, Button, Col, Row } from '@freecodecamp/react-bootstrap';
 import { Spacer } from '../helpers';
-import { blockNameify } from '../../../utils/blockNameify';
+import { blockNameify } from '../../../../utils/block-nameify';
 import Heart from '../../assets/icons/Heart';
 import Cup from '../../assets/icons/Cup';
-import MinimalDonateForm from './MinimalDonateForm';
+import DonateForm from './DonateForm';
+import { modalDefaultDonation } from '../../../../config/donation-settings';
 
 import {
   closeDonationModal,
@@ -59,12 +60,16 @@ function DonateModal({
   executeGA
 }) {
   const [closeLabel, setCloseLabel] = React.useState(false);
-  const handleProcessing = (duration, amount) => {
+  const handleProcessing = (
+    duration,
+    amount,
+    action = 'stripe form submission'
+  ) => {
     executeGA({
       type: 'event',
       data: {
         category: 'donation',
-        action: 'Modal strip form submission',
+        action: `Modal ${action}`,
         label: duration,
         value: amount
       }
@@ -72,28 +77,37 @@ function DonateModal({
     setCloseLabel(true);
   };
 
-  if (show) {
-    executeGA({ type: 'modal', data: '/donation-modal' });
-    executeGA({
-      type: 'event',
-      data: {
-        category: 'Donation',
-        action: `Displayed ${
-          isBlockDonation ? 'block' : 'progress'
-        } donation modal`,
-        nonInteraction: true
-      }
-    });
-  }
+  useEffect(() => {
+    if (show) {
+      executeGA({ type: 'modal', data: '/donation-modal' });
+      executeGA({
+        type: 'event',
+        data: {
+          category: 'Donation',
+          action: `Displayed ${
+            isBlockDonation ? 'block' : 'progress'
+          } donation modal`,
+          nonInteraction: true
+        }
+      });
+    }
+  }, [show, isBlockDonation, executeGA]);
+
+  const durationToText = donationDuration => {
+    if (donationDuration === 'onetime') return 'a one-time';
+    else if (donationDuration === 'month') return 'a monthly';
+    else if (donationDuration === 'year') return 'an annual';
+    else return 'a';
+  };
 
   const donationText = (
     <b>
-      Become a supporter and help us create even more learning resources for
-      you.
+      Become {durationToText(modalDefaultDonation.donationDuration)} supporter
+      of our nonprofit.
     </b>
   );
   const blockDonationText = (
-    <div className='block-modal-text'>
+    <div className=' text-center block-modal-text'>
       <div className='donation-icon-container'>
         <Cup className='donation-icon' />
       </div>
@@ -101,6 +115,7 @@ function DonateModal({
         {!closeLabel && (
           <Col sm={10} smOffset={1} xs={12}>
             <b>Nicely done. You just completed {blockNameify(block)}. </b>
+            <br />
             {donationText}
           </Col>
         )}
@@ -128,7 +143,7 @@ function DonateModal({
       <Modal.Body>
         {isBlockDonation ? blockDonationText : progressDonationText}
         <Spacer />
-        <MinimalDonateForm handleProcessing={handleProcessing} />
+        <DonateForm handleProcessing={handleProcessing} isMinimalForm={true} />
         <Spacer />
         <Row>
           <Col sm={4} smOffset={4} xs={8} xsOffset={2}>

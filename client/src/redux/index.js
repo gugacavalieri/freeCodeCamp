@@ -31,6 +31,12 @@ export const defaultFetchState = {
   error: null
 };
 
+export const defaultDonationFormState = {
+  processing: false,
+  success: false,
+  error: ''
+};
+
 const initialState = {
   appUsername: '',
   canRequestBlockDonation: false,
@@ -51,7 +57,10 @@ const initialState = {
   sessionMeta: { activeDonations: 0 },
   showDonationModal: false,
   isBlockDonationModal: false,
-  isOnline: true
+  isOnline: true,
+  donationFormState: {
+    ...defaultDonationFormState
+  }
 };
 
 export const types = createTypes(
@@ -71,7 +80,10 @@ export const types = createTypes(
     'updateComplete',
     'updateCurrentChallengeId',
     'updateFailed',
+    'updateDonationFormState',
     ...createAsyncTypes('fetchUser'),
+    ...createAsyncTypes('addDonation'),
+    ...createAsyncTypes('postChargeStripe'),
     ...createAsyncTypes('fetchProfileForUser'),
     ...createAsyncTypes('acceptTerms'),
     ...createAsyncTypes('showCert'),
@@ -112,9 +124,13 @@ export const preventBlockDonationRequests = createAction(
 export const preventProgressDonationRequests = createAction(
   types.preventProgressDonationRequests
 );
+export const updateDonationFormState = createAction(
+  types.updateDonationFormState
+);
 
 export const onlineStatusChange = createAction(types.onlineStatusChange);
 
+// TODO: re-evaluate this since /internal is no longer used.
 // `hardGoTo` is used to hit the API server directly
 // without going through /internal
 // used for things like /signin and /signout
@@ -131,6 +147,16 @@ export const acceptTermsError = createAction(types.acceptTermsError);
 export const fetchUser = createAction(types.fetchUser);
 export const fetchUserComplete = createAction(types.fetchUserComplete);
 export const fetchUserError = createAction(types.fetchUserError);
+
+export const addDonation = createAction(types.addDonation);
+export const addDonationComplete = createAction(types.addDonationComplete);
+export const addDonationError = createAction(types.addDonationError);
+
+export const postChargeStripe = createAction(types.postChargeStripe);
+export const postChargeStripeComplete = createAction(
+  types.postChargeStripeComplete
+);
+export const postChargeStripeError = createAction(types.postChargeStripeError);
 
 export const fetchProfileForUser = createAction(types.fetchProfileForUser);
 export const fetchProfileForUserComplete = createAction(
@@ -159,7 +185,6 @@ export const completedChallengesSelector = state =>
 export const completionCountSelector = state => state[ns].completionCount;
 export const currentChallengeIdSelector = state => state[ns].currentChallengeId;
 export const isDonatingSelector = state => userSelector(state).isDonating;
-
 export const isOnlineSelector = state => state[ns].isOnline;
 export const isSignedInSelector = state => !!state[ns].appUsername;
 export const isDonationModalOpenSelector = state => state[ns].showDonationModal;
@@ -167,12 +192,11 @@ export const canRequestBlockDonationSelector = state =>
   state[ns].canRequestBlockDonation;
 export const isBlockDonationModalSelector = state =>
   state[ns].isBlockDonationModal;
-
+export const donationFormStateSelector = state => state[ns].donationFormState;
 export const signInLoadingSelector = state =>
   userFetchStateSelector(state).pending;
 export const showCertSelector = state => state[ns].showCert;
 export const showCertFetchStateSelector = state => state[ns].showCertFetchState;
-
 export const shouldRequestDonationSelector = state => {
   const completedChallenges = completedChallengesSelector(state);
   const completionCount = completionCountSelector(state);
@@ -212,10 +236,15 @@ export const certificatesByNameSelector = username => state => {
     isJsAlgoDataStructCert,
     isApisMicroservicesCert,
     isInfosecQaCert,
+    isQaCertV7,
+    isInfosecCertV7,
     isFrontEndCert,
     isBackEndCert,
     isDataVisCert,
-    isFullStackCert
+    isFullStackCert,
+    isSciCompPyCertV7,
+    isDataAnalysisPyCertV7,
+    isMachineLearningPyCertV7
   } = userByNameSelector(username)(state);
   return {
     hasModernCert:
@@ -224,15 +253,16 @@ export const certificatesByNameSelector = username => state => {
       isFrontEndLibsCert ||
       isJsAlgoDataStructCert ||
       isApisMicroservicesCert ||
-      isInfosecQaCert ||
-      isFullStackCert,
-    hasLegacyCert: isFrontEndCert || isBackEndCert || isDataVisCert,
+      isQaCertV7 ||
+      isInfosecCertV7 ||
+      isFullStackCert ||
+      isSciCompPyCertV7 ||
+      isDataAnalysisPyCertV7 ||
+      isMachineLearningPyCertV7,
+    hasLegacyCert:
+      isFrontEndCert || isBackEndCert || isDataVisCert || isInfosecQaCert,
+    isFullStackCert,
     currentCerts: [
-      {
-        show: isFullStackCert,
-        title: 'Full Stack Certification',
-        showURL: 'full-stack'
-      },
       {
         show: isRespWebDesignCert,
         title: 'Responsive Web Design Certification',
@@ -259,9 +289,29 @@ export const certificatesByNameSelector = username => state => {
         showURL: 'apis-and-microservices'
       },
       {
-        show: isInfosecQaCert,
-        title: 'Information Security and Quality Assurance Certification',
-        showURL: 'information-security-and-quality-assurance'
+        show: isQaCertV7,
+        title: ' Quality Assurance Certification',
+        showURL: 'quality-assurance-v7'
+      },
+      {
+        show: isInfosecCertV7,
+        title: 'Information Security Certification',
+        showURL: 'information-security-v7'
+      },
+      {
+        show: isSciCompPyCertV7,
+        title: 'Scientific Computing with Python Certification',
+        showURL: 'scientific-computing-with-python-v7'
+      },
+      {
+        show: isDataAnalysisPyCertV7,
+        title: 'Data Analysis with Python Certification',
+        showURL: 'data-analysis-with-python-v7'
+      },
+      {
+        show: isMachineLearningPyCertV7,
+        title: 'Machine Learning with Python Certification',
+        showURL: 'machine-learning-with-python-v7'
       }
     ],
     legacyCerts: [
@@ -279,6 +329,18 @@ export const certificatesByNameSelector = username => state => {
         show: isDataVisCert,
         title: 'Data Visualization Certification',
         showURL: 'legacy-data-visualization'
+      },
+      {
+        show: isInfosecQaCert,
+        title: 'Information Security and Quality Assurance Certification',
+        // Keep the current public profile cert slug
+        showURL: 'information-security-and-quality-assurance'
+      },
+      {
+        show: isFullStackCert,
+        title: 'Full Stack Certification',
+        // Keep the current public profile cert slug
+        showURL: 'full-stack'
       }
     ]
   };
@@ -325,9 +387,80 @@ function spreadThePayloadOnUser(state, payload) {
 
 export const reducer = handleActions(
   {
+    [types.acceptTermsComplete]: (state, { payload }) => {
+      const { appUsername } = state;
+      return {
+        ...state,
+        user: {
+          ...state.user,
+          [appUsername]: {
+            ...state.user[appUsername],
+            // TODO: the user accepts the privacy terms in practice during auth
+            // however, it's currently being used to track if they've accepted
+            // or rejected the newsletter. Ideally this should be migrated,
+            // since they can't sign up without accepting the terms.
+            acceptedPrivacyTerms: true,
+            sendQuincyEmail:
+              payload === null
+                ? state.user[appUsername].sendQuincyEmail
+                : payload
+          }
+        }
+      };
+    },
     [types.allowBlockDonationRequests]: state => ({
       ...state,
       canRequestBlockDonation: true
+    }),
+    [types.updateDonationFormState]: (state, { payload }) => ({
+      ...state,
+      donationFormState: { ...state.donationFormState, ...payload }
+    }),
+    [types.addDonation]: state => ({
+      ...state,
+      donationFormState: { ...defaultDonationFormState, processing: true }
+    }),
+    [types.addDonationComplete]: state => {
+      const { appUsername } = state;
+      return {
+        ...state,
+        user: {
+          ...state.user,
+          [appUsername]: {
+            ...state.user[appUsername],
+            isDonating: true
+          }
+        },
+
+        donationFormState: { ...defaultDonationFormState, success: true }
+      };
+    },
+    [types.addDonationError]: (state, { payload }) => ({
+      ...state,
+      donationFormState: { ...defaultDonationFormState, error: payload }
+    }),
+    [types.postChargeStripe]: state => ({
+      ...state,
+      donationFormState: { ...defaultDonationFormState, processing: true }
+    }),
+    [types.postChargeStripeComplete]: state => {
+      const { appUsername } = state;
+      return {
+        ...state,
+        user: {
+          ...state.user,
+          [appUsername]: {
+            ...state.user[appUsername],
+            isDonating: true
+          }
+        },
+
+        donationFormState: { ...defaultDonationFormState, success: true }
+      };
+    },
+    [types.postChargeStripeError]: (state, { payload }) => ({
+      ...state,
+      donationFormState: { ...defaultDonationFormState, error: payload }
     }),
     [types.fetchUser]: state => ({
       ...state,
@@ -446,12 +579,10 @@ export const reducer = handleActions(
         error: payload
       }
     }),
-    [types.submitComplete]: (state, { payload: { id, challArray } }) => {
-      // TODO: possibly more of the payload (files?) should be added
-      // to the completedChallenges array.
-      let submittedchallenges = [{ id, completedDate: Date.now() }];
-      if (challArray) {
-        submittedchallenges = challArray;
+    [types.submitComplete]: (state, { payload }) => {
+      let submittedchallenges = [{ ...payload, completedDate: Date.now() }];
+      if (payload.challArray) {
+        submittedchallenges = payload.challArray;
       }
       const { appUsername } = state;
       return {
